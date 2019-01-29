@@ -1,17 +1,19 @@
+//PCA das imagens de colônias de S. cerevisiae irradiadas com 2Gy e do controle. 
 clear, clear all, clearglobal()
 //stacksize(2e7)
 
 //------------- compressao por Wavelet -------------------
 
-n= 34;// numero de dados
-n1 = 12;
-n2 = 8;
-n3 = 14;
-n4 = n2+n3;
-x1 = dir('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\controle');
+n= 34;// numero de dados totais
+n1 = 12; //numero de amostras da classe 1 = controle 
+n2 = 8; //numero de amostras da classe 2.1 = irradiadas placa 1 
+n3 = 14; //numero de amostras da classe 2.2 = irradiadas placa 2 
+n4 = n2+n3; //total de irradiadas = 22
+x1 = dir('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\controle'); //lista dos arquivos na pasta de imagens
 x2 = dir('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\placa1_2Gy');
 x3 = dir('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\placa2_2Gy');
 
+//leitura e compressao de todos os arquivos da pasta controle
 for i = 1:n1
     c = sci2exp(i)// converte constante em string
     im0 = imread('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\controle\' + x1(i)); //para cada teste criar uma pasta com todas as amostras que se queira
@@ -27,6 +29,7 @@ for i = 1:n1
     
 end
 
+//leitura e compressao de todos os arquivos da pasta irradiadas placa 1
 for j = 1:n2
     c = sci2exp(j+i)// converte constante em string
     im0 = imread('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\placa1_2Gy\' + x2(j)); //para cada teste criar uma pasta com todas as amostras que se queira
@@ -42,6 +45,7 @@ for j = 1:n2
     
 end
 
+//leitura e compressao de todos os arquivos da pasta irradiadas placa 2
 for l = 1:n3
     c = sci2exp(l+j)// converte constante em string
     im0 = imread('C:\Users\natal\Desktop\IC\experimentosImagens\15.01.19 - irradiada\placa2_2Gy\' + x3(l)); //para cada teste criar uma pasta com todas as amostras que se queira
@@ -136,75 +140,3 @@ figure(3),plot(Sig1(1,:),Sig1(3,:),'r^');
 //figure(4),plot3d(Sig1(1,40:49),Sig1(2,40:49),Sig1(3,40:49),'y^');
 
 figure(5), plot(J1/sum(J1));
-
-
-// ---------------------mesmo procedimento para a matriz de dados testes ---------------------------------------------------------------
-
-//------------- compressao por Wavelet -------------------
-
-t= 4 // numero de dados
-
-for i = 1:t
-    c = sci2exp(i)// converte constante em string
-    im = imread('C:\Users\radio\Desktop\Natalia\imagens_dados_teste160218\grayscale\teste'+c+'.jpg'); 
-    im=im2double(im);
-    [C,S]=wavedec2(im,3,'bior1.1');
-    cA=appcoef2(C,S,'bior1.1',3);
-    a=wkeep(cA,[size(cA)]); //mesma coisa que cA
-    a=(a-min(a))/max(a-min(a)); 
-    m1 =sum(a, 'r');
-    m1=(m1-min(m1))/max(m1-min(m1));  
-
-// 1-8: E. coli ; 9-14: S. aureus; 15-27: B. subtilis; 28-36: S. cerevisiae
-    save('C:\Users\radio\Desktop\Natalia\dados_wavelet_Scilab5\dado_teste'+c+'.dat', m1);
-    
-end
-
-
-// --------------------- PCA -------------------------
-
-
-X_teste = [];
-t = 4;
-
-for i = 1:t
-    c = sci2exp(i)// converte constante em string
-    load('C:\Users\radio\Desktop\Natalia\dados_wavelet_Scilab5\dado'+c+'.dat'); 
-    X_teste = [X_teste m1'] //X = matriz de dados
-end
-
-//Calculando a média de cada linha de X_teste
-for i=1:160
-    Xm_teste(i)=mean(X_teste(i,:)); // retorna um vetor coluna
-    Xstd_teste(i)=stdev(X_teste(i,:));
-end
-
-
-//subtrai a media de cada coluna
-for j=1:t//numero de amostras
-    Xmm_teste(:,j)=X_teste(:,j)-Xm_teste;
-end
-    
-    
-for i=1:160
-    Xmmm_teste(i,:) = Xmm_teste(i,:)/Xstd_teste(i,:); // divide cada coluna pelo desvio padrao
-end
-
-
-//Calculando a matrix de covariância
-
-Xc_teste=(1/t)*(Xmmm_teste*Xmmm_teste'); // dividir pelo número de amostras
-
-
-// -------------------------------- classificação dos testes por KNN --------------------------------------------------
-
-
-//Achando centro do cluster ; 1 dado = 1 linha
-Centros_iniciais = SelectRandomly(Xmmm', 4);
-Centros = CMeans(Xmmm', Centros_iniciais,4,'iterations',10);
-
-//Retorna o cluster mais proximo
-[Neighbors, Distances] = GetNearestNeighbor(Xmmm_teste', Centros, 4) ;
-
-
-
